@@ -1,3 +1,11 @@
+"""
+@author: Yi Shen
+@contact: yishen734@gmail.com
+@version: 0.1
+@file: fgsm.py
+@time: 27/10/2020
+"""
+
 from attackers.attacker_base import AttackerBase
 import numpy as np
 import torch
@@ -93,7 +101,8 @@ class FGSM(AttackerBase):
         Evaluate the effects of adversarial examples
         Args:
             model: the pre-trained model which will be evaluated on
-            dataset: None
+            dataset: None - For FGSM, the evaluation stage doesn't need dataset.
+                     Necessary data has been saved in self.adv_samples
         """
 
         model.eval()
