@@ -74,9 +74,9 @@ class UAA(AttackerBase):
                         self.universal_pert = self.project_lp(self.universal_pert, self.xi, self.p)
             iter += 1
             fooling_rate = self.eval_adversarial_samples(model=model, dev_set=dev_set)
-            if fooling_rate >= self.last_best_fooling_rate:
-                np.save(self.save_path + 'universal_pert' + str(iter) + '_' +
-                        str(round(fooling_rate, 4)), self.universal_pert)
+            # if fooling_rate >= self.last_best_fooling_rate:
+            #     np.save(self.save_path + 'universal_pert' + str(iter) + '_' +
+            #             str(round(fooling_rate, 4)), self.universal_pert)
 
     def deepfool(self, image, model, num_classes, overshoot, max_iter):
         """
