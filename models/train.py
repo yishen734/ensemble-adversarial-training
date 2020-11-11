@@ -27,18 +27,18 @@ def train(model, train_loader, optimizer, criterion):
         optimizer.zero_grad()
         x, y = x.to(device), y.to(device)
 
-        # predict
+        # Predict
         output = model(x)
         y_hat = output.argmax(dim=1)
 
-        # loss
+        # Loss
         loss = criterion(output, y)
 
         running_loss += loss.item()
         correct = (y_hat == y).float().sum()
         total_correct += correct.cpu().detach().numpy()
 
-        # backward, update weights
+        # Backward, update weights
         loss.backward()
         optimizer.step()
     avg_loss = running_loss / len(train_loader)
@@ -53,11 +53,11 @@ def test(model, test_loader, criterion):
         for x, y in test_loader:
             x, y = x.to(device), y.to(device)
 
-            # predict
+            # Predict
             output = model(x)
             y_hat = output.argmax(dim=1)
 
-            # calculate loss and the number of correct predictions
+            # Calculate loss and the number of correct predictions
             loss = criterion(output, y)
             running_loss += loss.item()
             correct = (y_hat == y).float().sum()
@@ -148,9 +148,7 @@ def main():
             best_accuracy = accuracy
             torch.save(model, "../model_files/best_model.pth")
         scheduler.step(accuracy)
-
-        vgg = vgg()
-
+        # vgg = vgg()
 
 
 if __name__ == '__main__':

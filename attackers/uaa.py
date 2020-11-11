@@ -2,8 +2,6 @@
 # Date : 10/11/2020
 
 import os
-
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 from attackers.attacker_base import *
 import numpy as np
 from tqdm import tqdm
@@ -16,6 +14,7 @@ from torch.autograd.gradcheck import zero_gradients
 import torch
 import torchvision.transforms as T
 
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 class UAA(AttackerBase):
     def __init__(self):
@@ -63,7 +62,6 @@ class UAA(AttackerBase):
                 torch.cuda.empty_cache()
 
                 if r1 == r2:
-                    # print(">> k =", np.where(k == order)[0][0], ', pass #', iter,end='\n')
                     dr, iter_k, label, k_i, pert_image = self.deepfool(perte_img1[0], model,
                                                                        num_classes=self.num_classes,
                                                                        overshoot=self.overshoot,
@@ -76,12 +74,11 @@ class UAA(AttackerBase):
                         self.universal_pert = self.project_lp(self.universal_pert, self.xi, self.p)
             iter += 1
             fooling_rate = self.eval_adversarial_samples(model=model, dev_set=dev_set)
-            if fooling_rate >= self.last_best_fooling_rate:
-                np.save(self.save_path + 'universal_pert' + str(iter) + '_' +
-                        str(round(fooling_rate, 4)), self.universal_pert)
+            # if fooling_rate >= self.last_best_fooling_rate:
+            #     np.save(self.save_path + 'universal_pert' + str(iter) + '_' +
+            #             str(round(fooling_rate, 4)), self.universal_pert)
 
     def deepfool(self, image, model, num_classes, overshoot, max_iter):
-
         """
            :param image: Image of size HxWx3
            :param net: network (input: images, output: values of activation **BEFORE** softmax).
@@ -119,29 +116,30 @@ class UAA(AttackerBase):
             fs[0, I[0]].backward(retain_graph=True)  # get original grad
             grad_orig = x.grad.data.cpu().numpy().copy()
 
-            for k in range(1, num_classes):  # find minimal pert_k and w_k, to send data to its decision boundry
+            for k in range(1, num_classes):  # find minimal pert_k and w_k, to send data to its decision boundary
                 zero_gradients(x)
 
-                fs[0, I[k]].backward(retain_graph=True)  # get wrong class grad
+                # get wrong class grad
+                fs[0, I[k]].backward(retain_graph=True)
                 cur_grad = x.grad.data.cpu().numpy().copy()
 
-                # set new w_k and new f_k
+                # Set new w_k and new f_k
                 w_k = cur_grad - grad_orig  # difference of grad
                 f_k = (fs[0, I[k]] - fs[0, I[0]]).data.cpu().numpy()  # difference of label score
 
                 pert_k = abs(f_k) / np.linalg.norm(w_k.flatten())  # delta y / delta grad = pert
 
-                # determine which w_k to use
+                # Determine which w_k to use
                 if pert_k < pert:
                     pert = pert_k
                     w = w_k
 
-            # compute r_i and r_tot
+            # Compute r_i and r_tot
             # Added 1e-4 for numerical stability
             r_i = (pert + 1e-4) * w / np.linalg.norm(w)
             r_tot = np.float32(r_tot + r_i)
 
-            # overshoot for scale
+            # Overshoot for scale
             if is_cuda:
                 pert_image = image + (1 + overshoot) * torch.from_numpy(r_tot).cuda()
             else:
@@ -161,7 +159,7 @@ class UAA(AttackerBase):
         elif p == np.inf:
             v = np.sign(v) * np.minimum(abs(v), xi)
         else:
-            raise ValueError("Values of a different from 2 and Inf are currently not surpported...")
+            raise ValueError("Values of a different from 2 and Inf are currently not supported...")
 
         return v
 
