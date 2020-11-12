@@ -272,7 +272,8 @@ class FGSM_AT(DefenderBase):
 
         for adv_data in train_dataset.data:
             adv_images.append(adv_data.transpose(2, 0, 1) / 255)
-            adv_labels.extend(train_dataset.targets)
+        
+        adv_labels.extend(train_dataset.targets)
 
         defense_dataset = Mydataset(torch.tensor(adv_images), torch.tensor(adv_labels))
         defense_loader = torch.utils.data.DataLoader(dataset=defense_dataset,
