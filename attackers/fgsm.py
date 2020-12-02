@@ -71,11 +71,11 @@ class FGSM(AttackerBase):
             # Forward pass the data, log softmax the output to get softmax probability
             output = model(x)
             output = F.log_softmax(output, dim=1)
-            init_pred = output.max(1, keepdim=True)[1]  # get the index of the max log-probability
+            # init_pred = output.max(1, keepdim=True)[1]  # get the index of the max log-probability
 
             # If the initial prediction is wrong, no need to attack, just move on
-            if init_pred.item() != y.item():
-                continue
+            # if init_pred.item() != y.item():
+            #     continue
 
             # Calculate the loss
             loss = F.nll_loss(output, y)
