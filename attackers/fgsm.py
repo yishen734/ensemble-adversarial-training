@@ -52,9 +52,9 @@ class FGSM(AttackerBase):
 
         # Generate the attack data loader
         attack_loader = data.DataLoader(dataset=dataset,
-                                        shuffle=True,
+                                        shuffle=False,
                                         batch_size=1,
-                                        drop_last=True,
+                                        drop_last=False,
                                         num_workers=1,
                                         pin_memory=True)
 

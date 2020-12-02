@@ -8,7 +8,7 @@ import torchvision
 from torch.utils import data
 from torchvision import transforms
 from attackers.fgsm import FGSM
-from random_ensemble import generate_test_samples,cal_correlation
+from random_ensemble import generate_test_samples,cal_correlation,resume_model
 from tqdm import tqdm
 import numpy as np
 
