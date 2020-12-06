@@ -168,7 +168,7 @@ def cal_correlation(model_pool, test_samples):
     pearson_correlation = 0
     cosine_correlation = 0
     criterion = nn.CrossEntropyLoss()
-
+    count = 0
     for i in range(10):
       for j, (x, y) in enumerate(test_samples[i]):
         grad_pool = []
@@ -190,9 +190,12 @@ def cal_correlation(model_pool, test_samples):
                 continue
             pearson_correlation_temp += np.corrcoef(k, l)[0][1]
             cosine_correlation_temp += (k*l).sum() / (np.linalg.norm(k) * np.linalg.norm(l))
+            count += 1
         pearson_correlation += (pearson_correlation_temp / 2)
         cosine_correlation += (cosine_correlation_temp / 2)
-    return pearson_correlation, cosine_correlation
+    avg_pearson = pearson_correlation / count
+    avg_cosine = cosine_correlation / count
+    return pearson_correlation, cosine_correlation,avg_pearson,avg_cosine
                     
 
 def main():
@@ -227,13 +230,16 @@ def main():
     test_samples = generate_test_samples(test_raw, num_sample)
 
     # TODO: 用上面生成的test samples计算当前model pool的diversity
-    pearson_correlation, cosine_correlation = cal_correlation(model_pool, test_samples)
+    pearson_correlation, cosine_correlation,avg_pearson,\
+    avg_cosine = cal_correlation(model_pool, test_samples)
 
     '''
     到此就结束了, 我们得到了一个avg_test_acc和一个diversity共两个指标, 得到后把实验数据给我即可  
     '''
     print("avg_test_acc: {}".format(avg_test_acc))
-    print("pearson correlation: {}, cosine correlation: {}".format(pearson_correlation, cosine_correlation))
+    print("pearson correlation: {}, cosine correlation: {}, "
+          "average pearson: {},average cosine: {} ".format(pearson_correlation,
+                                                           cosine_correlation,avg_pearson,avg_cosine))
 
 
 if __name__ == '__main__':
