@@ -7,6 +7,8 @@ Original file is located at
     https://colab.research.google.com/drive/1AXb5EqO_x1pn9cpIDaNskL4J_PGaBKj3
 """
 
+import os
+import sys
 from VGG import create_VGG
 import torch
 import torchvision
@@ -113,16 +115,16 @@ def train_epoch(model, train_loader, optimizer, criterion):
     return avg_loss
 
 
-def save_model(model_pool):
+def save_model(model_pool, model_dir):
     for i, model in enumerate(model_pool):
-        torch.save(model.state_dict(), './model{}_parameter.pkl'.format(i + 1))
+        torch.save(model.state_dict(), os.path.join(model_dir, f'model{i + 1}_parameter.pkl'))
 
 
-def resume_model(num_model, model_dir="./"):
+def resume_model(num_model, model_dir):
     model_pool = []
     for i in range(num_model):
         model = create_VGG('VGG19', 10).to(device)
-        model.load_state_dict(torch.load(f'{model_dir}model{i + 1}_parameter.pkl'))
+        model.load_state_dict(torch.load(os.path.join(model_dir, f'model{i + 1}_parameter.pkl'))
         model_pool.append(model)
     return model_pool
 
@@ -199,7 +201,7 @@ def cal_correlation(model_pool, test_samples):
     return pearson_correlation, cosine_correlation, avg_pearson, avg_cosine
 
 
-def main():
+def main(sample_rate, output_dir):
     train_raw = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
     test_raw = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
 
@@ -207,14 +209,14 @@ def main():
     test_loader = torch.utils.data.DataLoader(test_raw, batch_size=64, shuffle=True, pin_memory=True)
 
     num_model = 20
-    sample_rate = 0.5  # could change this value to 0.3 0.4 0.5 0.6
+    # sample_rate = 0.5  # could change this value to 0.3 0.4 0.5 0.6
     model_pool = train_model_pool(num_model, sample_rate, train_raw, test_loader)
 
-    save_model(model_pool)
+    save_model(model_pool, output_dir)
 
     ##############################  SAVE MODEL AND RESUME MODEL LINE  #################################
 
-    model_pool = resume_model(num_model)
+    model_pool = resume_model(num_model, output_dir)
 
     # Test each model in the pool to get its testing accuracy
     ls_test_acc = []
@@ -237,4 +239,6 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    SAMPLE_RATE = sys.argv[1]
+    OUTPUT_DIR = sys.argv[2]
+    main(SAMPLE_RATE, OUTPUT_DIR)

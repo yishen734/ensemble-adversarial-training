@@ -36,15 +36,16 @@ For RIT and RN, the corresponding code has been removed, because our experiments
 For FGSM-AT defense, run `python main.py FGSM-AT`.
 
 # For testing random-ensemble methods, follow these steps.
-1. Run `python random_ensemble.py`. This will give us a model pool as size of 20. The sample rate is following the report.
+1. Run `python random_ensemble.py <sample_rate> <output_dir>`
+    * Set the `sample_rate` to  `["0.3","0.4","0.5","0.6","1.0"]` respectively and set `<output_dir>` to the corresponding directories where you want to save the model pools. For example, you can run  `python random_ensemble.py 0.3 ./model_files/30_sample_rate/` for `sample_rate=0.3`.
+    * This will give us a model pool as size of 20.
 2. Change the directory URLs in the file `eval.py`.
 
-    * First, in line 164, set `base_classifier_dir` to the URL of best_model.pth, the base classifier used to generate adversarial smaples.
-    
+    * First, in line 164, set `base_classifier_dir` to the URL of `best_model.pth`, the base classifier used to generate adversarial samples.
+
     * Second, in line 165, set `left_aside_model_dir` to the URL of the non-defense model which will be used for comparison.
-    
-    * Third, change the list `pool_dir`, which should contain the URL of models trained from each sample rate, please follow the sample rate order `["30","40","50","60","100"]`. 
-    
+
+    * Third, change the list `pool_dir`, which should contain the URL of models trained from each sample rate, please follow the sample rate order `["0.3","0.4","0.5","0.6","1.0"]`. 
 3. Run `python eval.py` for evaluation.
 
 

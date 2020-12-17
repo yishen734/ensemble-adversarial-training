@@ -1,9 +1,5 @@
 
-.idea/11785-GRP.iml
-.idea/inspectionProfiles/profiles_settings.xml
-.idea/misc.xml
-.idea/modules.xml
-.idea/vcs.xml
+.idea/
 __pycache__/random_ensemble.cpython-38.pyc
 __pycache__/VGG.cpython-38.pyc
 attackers/__pycache__/attacker_base.cpython-38.pyc
