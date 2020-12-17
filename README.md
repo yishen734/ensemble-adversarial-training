@@ -49,7 +49,7 @@ For FGSM-AT defense, run `python main.py FGSM-AT`.
 3. Run `python eval.py` for evaluation.
 
 # For testing AT-ensemble methods, follow these steps.
-1. Run `python AT-ensemble.py`
+1. Run `python AT-ensemble.py <sample_rate> <input_dir> <output_dir>`
      * Set the `sample_rate` to  `["0.3","0.4","0.5","0.6","1.0"]` respectively , set `<input_dir>` to the directories of exists models and  set `<output_dir>` to the corresponding directories where you want to save the model pools. For example, you can run  `python random_ensemble.py 0.3 ./model_files/30_sample_rate/ ./model_files/30_sample_rate_AT/` for `sample_rate=0.3`.
     * This will give us a AT model pool as size of 20.
 
