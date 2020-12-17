@@ -20,7 +20,8 @@ class Evaluator():
         self.fgsm_eps = fgsm_eps
         self.batch_size = 16
         self.base_classifier = torch.load(base_classifier_dir)
-        self.left_aside_model = torch.load(left_aside_model_dir)
+        self.left_aside_model = create_VGG('VGG19', 10)
+        self.left_aside_model.load_state_dict(torch.load(left_aside_model_dir))
         self.test_raw = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=None)
         test_transform = transforms.Compose([transforms.ToTensor()])
         self.test_raw.transform = test_transform
@@ -161,11 +162,18 @@ class Evaluator():
 
 
 if __name__ == "__main__":
-    base_classifier_dir = "./model_files/best_model.pth"
-    left_aside_model_dir = "./100_sample_rate_model"
+    base_classifier_dir = "model_files/best_model.pth"
+    left_aside_model_dir = "model_files/model0_parameter.pkl"
     num_models = 20
-    pool_dir = "./"
-    evaluator = Evaluator(fgsm_eps=0.2,base_classifier_dir=base_classifier_dir,
+    pool_dir = ["/content/drive/MyDrive/Project/models/30_sample_rate/","/content/drive/MyDrive/Project/models/40_sample_rate/","/content/drive/MyDrive/Project/models/50_sample_rate/",
+          "/content/drive/MyDrive/Project/models/60_sample_rate/","/content/drive/MyDrive/Project/models/100_sample_rate/"]
+    sample_rate = ["30","40","50","60","100"]
+    evaluator = Evaluator(fgsm_eps=0.02, base_classifier_dir=base_classifier_dir,
                           left_aside_model_dir=left_aside_model_dir)
-    evaluator.reset_model_pool(num_models=num_models,pool_dir=pool_dir)
-    evaluator.model_pool_eval()
+    for i,pd in enumerate(pool_dir):
+        print(f"start {sample_rate[i]} sample rate pool evaluation")
+        torch.cuda.empty_cache()
+        evaluator.reset_model_pool(num_models=num_models, pool_dir=pd)
+        evaluator.model_pool_eval()
+        print(f"finish {sample_rate[i]} sample rate pool evaluation")
+

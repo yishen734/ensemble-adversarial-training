@@ -21,41 +21,42 @@ import torch.nn.functional as F
 import math
 
 '''
-步骤
-1. 读取数据库
-2. 用特定的sample rate (40%, 50%, 60%)去sample training set
-3. 得到sample后的训练数据，用来分别训练5个模型得到一个size为5的model pool
-4. 测试当前model pool的performance和diversity:
-    (1) performance很简单，5个模型分别求testing acc，求平均即可
-    (2) 求diversity:
-        - 从testing set里面每一个类中随机挑选20个test samples，CIFAR-10有10个类, 所以就是一共200个samples
-        - 写一个for循环依次遍历这200个samples, 每一个sample会被依次feed给model_1, model_2 ... model_5
-        - 每个sample被feed之后反向传播可以得到一个当前数据的gradient, 我们会得到5个这样的gradient G1, G2 ..., G5
-        - 两两计算gradient之间的dot product (G1G2,G1G3,G1G4...我们将得到4 + 3 + 2 + 1 = 10个这样的dot product), 然后求和得到一个dot_product_sum
-        - 200个数据中的每一个数据都可以得到上面的一个dot_product_sum,
-          所有最后有200个这样的dot_product_sum, 再对这200个sum求和得到一个可以代表当前model pool的diversity
-5.返回step2，调整sample rate然后重复step 3和 4最后分别得到40%, 50%, 60%的model pool的performance和diversity,
-  最后再分析选40%, 50%, 60%其中的哪一个
+Pipeline
+1. Read dataset
+2. Use specific sample rate (40%, 50%, 60%) to sample a sub dataset for training
+3. Use the sampled training data to train five models respectively to get a model pool with size 5
+4. Test the model pool's performance and diversity:
+    (1) testing performance is straightforward，just calculate the testing acc of five models and then take the avg
+    (2) testing diversity:
+        - select 20 test samples from class of the testing set. CIFAR-10 has 10 classes, so there are totally 200 samples
+        - go through these 200 samples one by one and each of them will be fed into model_1, model_2 ... model_5
+        - backpropagate to get the gradident of the current input after each sample is fed into the model, we'll get five such gradients G1, G2 ..., G5
+        - calculate the cosine similarity of each pair of gradients (G1G2,G1G3,G1G4... then we'll get 10 cosine similarity), calculate the sum to get a similarity sum
+        - each of the 200 samples will have such a similarity sum
+          so there are 200 such similarity sum. Sum them up to get a quantity which could represent the model pool's diversity
+5. Go back to step2，adjust sample rate and repeat step 3 and 4. Finally get the performance and diversity of the model pool with 40%, 50%, 60% sample rate
+   Analyze the result to see which sample rate should be selected
 '''
 
 transform = transforms.Compose([transforms.ToTensor()])
 device = torch.device("cuda")
 
-# TODO: 从读取的training data中随机抽取40% 50% 60%
 
+# Sample 40%, 50%, 60% training data
 def sample_train_data(sample_rate, train_dataset):
     n_train = len(train_dataset)
     split = int(n_train * sample_rate)
     indices = list(range(n_train))
     random.shuffle(indices)
     randomsampler = torch.utils.data.sampler.SubsetRandomSampler(indices[:split])
-    train_loader = data.DataLoader(train_dataset, batch_size= 64, pin_memory=True, sampler = randomsampler)
+    train_loader = data.DataLoader(train_dataset, batch_size=64, pin_memory=True, sampler=randomsampler)
 
     return train_loader
 
-# TODO: 对pool中每一个模型用sample_data(40% 或者 50% 或者 60%)去训练
+
+# Train each model in the pool with sampled data (40%, 50%, 60%)
 def train_model_pool(num_models, sample_rate, train_raw, test_loader):
-    # 初始化model pool
+    # Initialize the model pool
     model_pool_pre = []
     for i in range(num_models):
         model = create_VGG('VGG19', 10)
@@ -63,9 +64,9 @@ def train_model_pool(num_models, sample_rate, train_raw, test_loader):
         model_pool_pre.append(model)
 
     model_pool = []
-    # 每一个model用不同的随机取样样本训练
+    # Each model is trained with a different random sample
     for i, model in enumerate(model_pool_pre):
-        print("train model {} / {}".format(i+1, num_models))
+        print("train model {} / {}".format(i + 1, num_models))
         sampled_train_loader = sample_train_data(sample_rate, train_raw)
         model = train(model, sampled_train_loader, test_loader)
         model_pool.append(model)
@@ -73,7 +74,7 @@ def train_model_pool(num_models, sample_rate, train_raw, test_loader):
     return model_pool
 
 
-# TODO: 用sampled data训练单个模型
+# Train a single model using sampled data
 def train(model, train_loader, test_loader):
     n_epoches = 50
     optimizer = optim.SGD(model.parameters(), lr=0.005, weight_decay=0.0006, momentum=0.9)
@@ -81,16 +82,15 @@ def train(model, train_loader, test_loader):
     criterion = nn.CrossEntropyLoss()
 
     for epoch in range(n_epoches):
-    
         avg_loss = train_epoch(model, train_loader, optimizer, criterion)
         acc = test(model, test_loader)
         print("Epoch:", epoch + 1)
         print('Train Loss: ', round(avg_loss, 5))
         print('acc: {}'.format(acc))
         scheduler.step(avg_loss)
-    
+
     return model
-        
+
 
 def train_epoch(model, train_loader, optimizer, criterion):
     model.train()
@@ -108,15 +108,17 @@ def train_epoch(model, train_loader, optimizer, criterion):
         scaler.scale(loss).backward()
         scaler.step(optimizer)
         scaler.update()
-    
+
     avg_loss = running_loss / len(train_loader)
     return avg_loss
+
 
 def save_model(model_pool):
     for i, model in enumerate(model_pool):
         torch.save(model.state_dict(), './model{}_parameter.pkl'.format(i + 1))
 
-def resume_model(num_model,model_dir="./"):
+
+def resume_model(num_model, model_dir="./"):
     model_pool = []
     for i in range(num_model):
         model = create_VGG('VGG19', 10).to(device)
@@ -125,7 +127,7 @@ def resume_model(num_model,model_dir="./"):
     return model_pool
 
 
-# TODO: 测试单个模型得到其testing acc
+# Test one model to get its testing accuracy
 def test(model, test_loader):
     model.eval()
     running_loss = 0.0
@@ -136,11 +138,11 @@ def test(model, test_loader):
         for x, y in test_loader:
             x, y = x.to(device), y.to(device)
 
-            # predict
+            # Predict
             output = model(x)
             y_hat = output.argmax(dim=1)
 
-            # calculate loss and the number of correct predictions
+            # Calculate loss and the number of correct predictions
             loss = criterion(output, y)
             running_loss += loss.item()
             correct = (y_hat == y).float().sum()
@@ -148,7 +150,7 @@ def test(model, test_loader):
     return total_correct / len(test_loader.dataset)
 
 
-# TODO: 每一个class抽取20个sample用来计算pool diversity
+# Get 20 samples from each class to calculate model pool's diversity
 def generate_test_samples(test_raw, num_sample=20):
     sample = []
     for i in range(10):
@@ -160,8 +162,7 @@ def generate_test_samples(test_raw, num_sample=20):
     return sample
 
 
-
-# TODO: 计算当前pool的diversity
+# Calculate the diversity of the current model pool
 def cal_correlation(model_pool, test_samples):
     for model in model_pool:
         model.eval()
@@ -170,76 +171,69 @@ def cal_correlation(model_pool, test_samples):
     criterion = nn.CrossEntropyLoss()
     count = 0
     for i in range(10):
-      for j, (x, y) in enumerate(test_samples[i]):
-        grad_pool = []
-        pearson_correlation_temp = 0
-        cosine_correlation_temp = 0
-        for model in model_pool:
-          x, y = x.to(device), y.to(device)
-          x.requires_grad = True
-          output = model(x.unsqueeze(0))
-          loss = criterion(output, y)
-          model.zero_grad()
-          loss.backward()
-          data_grad = x.grad.data
-          grad_pool.append(data_grad.cpu().detach().numpy())
-        grad_pool = [grad.flatten() for grad in grad_pool]
-        for k in grad_pool:
-          for l in grad_pool:
-            if ((k == l).all()):
-                continue
-            pearson_correlation_temp += np.corrcoef(k, l)[0][1]
-            cosine_correlation_temp += (k*l).sum() / (np.linalg.norm(k) * np.linalg.norm(l))
-            count += 1
-        pearson_correlation += (pearson_correlation_temp / 2)
-        cosine_correlation += (cosine_correlation_temp / 2)
+        for j, (x, y) in enumerate(test_samples[i]):
+            grad_pool = []
+            pearson_correlation_temp = 0
+            cosine_correlation_temp = 0
+            for model in model_pool:
+                x, y = x.to(device), y.to(device)
+                x.requires_grad = True
+                output = model(x.unsqueeze(0))
+                loss = criterion(output, y)
+                model.zero_grad()
+                loss.backward()
+                data_grad = x.grad.data
+                grad_pool.append(data_grad.cpu().detach().numpy())
+            grad_pool = [grad.flatten() for grad in grad_pool]
+            for k in grad_pool:
+                for l in grad_pool:
+                    if ((k == l).all()):
+                        continue
+                    pearson_correlation_temp += np.corrcoef(k, l)[0][1]
+                    cosine_correlation_temp += (k * l).sum() / (np.linalg.norm(k) * np.linalg.norm(l))
+                    count += 1
+            pearson_correlation += (pearson_correlation_temp / 2)
+            cosine_correlation += (cosine_correlation_temp / 2)
     avg_pearson = pearson_correlation / count
     avg_cosine = cosine_correlation / count
-    return pearson_correlation, cosine_correlation,avg_pearson,avg_cosine
-                    
+    return pearson_correlation, cosine_correlation, avg_pearson, avg_cosine
+
 
 def main():
-    # TODO: 读取数据 - 注意这里的train_raw应该是一个tuple，需要进行transform然后丢入data loader中即可
     train_raw = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
     test_raw = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
 
-    # 创建data loader
-    # 注意, 我后面所有方程当前传的都是raw data, 但在你补充了生成data loader的代码后传loader应该会更方便
-    # ...
-    # TODO: 用特定的sample rate训练一个模型pool
-    test_loader = torch.utils.data.DataLoader(test_raw, batch_size= 64, shuffle= True, pin_memory=True)
-    
+    # Create data loader
+    test_loader = torch.utils.data.DataLoader(test_raw, batch_size=64, shuffle=True, pin_memory=True)
+
     num_model = 20
-    sample_rate = 0.5  # 这里改成0.3 0.4 0.5 0.6
+    sample_rate = 0.5  # could change this value to 0.3 0.4 0.5 0.6
     model_pool = train_model_pool(num_model, sample_rate, train_raw, test_loader)
 
     save_model(model_pool)
 
-##############################  SAVE MODEL AND RESUME MODEL LINE  #################################
-    
+    ##############################  SAVE MODEL AND RESUME MODEL LINE  #################################
+
     model_pool = resume_model(num_model)
 
-    # TODO: 依次测试pool中每一个model的testing acc
+    # Test each model in the pool to get its testing accuracy
     ls_test_acc = []
     for model in model_pool:
         ls_test_acc.append(test(model, test_loader))
     avg_test_acc = sum(ls_test_acc) / len(ls_test_acc)
 
-    # TODO: 用来测试模型diversity的test sample (每一个类别挑 N 个数据)
+    # Generate test samples for testing the diversity of model
     num_sample = 20
     test_samples = generate_test_samples(test_raw, num_sample)
 
-    # TODO: 用上面生成的test samples计算当前model pool的diversity
-    pearson_correlation, cosine_correlation,avg_pearson,\
+    # Calculate the model pool's diversity using the above generated test samples
+    pearson_correlation, cosine_correlation, avg_pearson, \
     avg_cosine = cal_correlation(model_pool, test_samples)
 
-    '''
-    到此就结束了, 我们得到了一个avg_test_acc和一个diversity共两个指标, 得到后把实验数据给我即可  
-    '''
     print("avg_test_acc: {}".format(avg_test_acc))
     print("pearson correlation: {}, cosine correlation: {}, "
           "average pearson: {},average cosine: {} ".format(pearson_correlation,
-                                                           cosine_correlation,avg_pearson,avg_cosine))
+                                                           cosine_correlation, avg_pearson, avg_cosine))
 
 
 if __name__ == '__main__':
