@@ -19,3 +19,6 @@ model_files/best_model.pth
 attackers/__pycache__/attacker_base.cpython-38.pyc
 attackers/__pycache__/fgsm.cpython-38.pyc
 *.pyc
+*.pkl
+*.pyc
+*.pyc

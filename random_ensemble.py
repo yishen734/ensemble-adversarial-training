@@ -117,6 +117,8 @@ def train_epoch(model, train_loader, optimizer, criterion):
 
 def save_model(model_pool, model_dir):
     for i, model in enumerate(model_pool):
+        if not os.path.exists(model_dir):
+            os.makedirs(model_dir)
         torch.save(model.state_dict(), os.path.join(model_dir, f'model{i + 1}_parameter.pkl'))
 
 
@@ -124,7 +126,7 @@ def resume_model(num_model, model_dir):
     model_pool = []
     for i in range(num_model):
         model = create_VGG('VGG19', 10).to(device)
-        model.load_state_dict(torch.load(os.path.join(model_dir, f'model{i + 1}_parameter.pkl'))
+        model.load_state_dict(torch.load(os.path.join(model_dir, f'model{i + 1}_parameter.pkl')))
         model_pool.append(model)
     return model_pool
 
@@ -239,6 +241,6 @@ def main(sample_rate, output_dir):
 
 
 if __name__ == '__main__':
-    SAMPLE_RATE = sys.argv[1]
+    SAMPLE_RATE = float(sys.argv[1])
     OUTPUT_DIR = sys.argv[2]
     main(SAMPLE_RATE, OUTPUT_DIR)

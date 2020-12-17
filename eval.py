@@ -67,7 +67,6 @@ class Evaluator():
         vote_adv_y = []
         indexes = np.arange(0,len(self.test_loader))
         adv_samples = np.array(self.attacker.adv_samples)
-        print(adv_samples.shape)
         adv_samples = adv_samples[:,0]
         num_samples = len(adv_samples)
         batches = num_samples // self.batch_size
@@ -165,9 +164,9 @@ if __name__ == "__main__":
     base_classifier_dir = "model_files/best_model.pth"
     left_aside_model_dir = "model_files/model0_parameter.pkl"
     num_models = 20
-    pool_dir = ["/content/drive/MyDrive/Project/models/30_sample_rate/","/content/drive/MyDrive/Project/models/40_sample_rate/","/content/drive/MyDrive/Project/models/50_sample_rate/",
-          "/content/drive/MyDrive/Project/models/60_sample_rate/","/content/drive/MyDrive/Project/models/100_sample_rate/"]
-    sample_rate = ["30","40","50","60","100"]
+    pool_dir = ["model_files/30_sample_rate/","model_files/40_sample_rate/","model_files/50_sample_rate/",
+          "model_files/60_sample_rate/","model_files/100_sample_rate/"]
+    sample_rate = ["0.3","0.4","0.5","0.6","1.0"]
     evaluator = Evaluator(fgsm_eps=0.02, base_classifier_dir=base_classifier_dir,
                           left_aside_model_dir=left_aside_model_dir)
     for i,pd in enumerate(pool_dir):
