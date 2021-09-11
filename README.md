@@ -1,13 +1,7 @@
 ## Abstract
-The model security has been an increasingly severe concern in the machine learning community.
-Experiments show that small perturbations to the original data (i.e. adversarial attacks) could lead to
-model’s misclassification. The ultimate goal of our project is to propose effective defense methods
-to defend against gradient-based adversarial attacks and explore the effect of system diversity on
-defense performance. Generally, the project is separated into two stages: (1) Reimplement three
-classic attacks and three defenses. (2) Research on ensemble defense methods. All the attack and
-defense methods will be experimented on the dataset CIFAR-10 using VGG-19 as the backbone. We
-select the three defenses that we implemented as the baseline and our ensemble defense methods
-finally prove to be much more effective.
+The model security has been an increasingly severe concern in the machine learning community. Experiments show that small perturbations to the original data (i.e. adversarial attacks) could lead to model’s misclassification. The ultimate goal of our project is to propose effective defense methods to defend against gradient-based adversarial attacks and explore the effect of system diversity on defense performance. 
+
+Generally, this research project is separated into two stages: (1) Reimplement three classic attacks and three defenses. (2) Research on ensemble defense methods. All the attack and defense methods will be experimented on the dataset CIFAR-10 using VGG-19 as the backbone. We select the three defenses that we implemented as the baseline and our ensemble defense methods finally prove to be much more effective.
 
 Attacks methods:
 (1) L-BFGS
